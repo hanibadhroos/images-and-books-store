@@ -8,17 +8,12 @@ use Illuminate\Http\Request;
 
 class CartItemsController extends Controller
 {
-     /**
-     * Display a listing of the resource.
-     */
+
     public function index()
     {
         //
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $dataToInsert['cart_id']= $request->cart_id;
@@ -29,17 +24,11 @@ class CartItemsController extends Controller
         return response()->json($item,201);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show($Item_id)
     {
         return response()->json(Cart_items::where('id',$Item_id)->select('*')->first());
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request,  $Item_id)
     {
         $dataToUpdate['quantity'] = $request->quantity;
@@ -47,9 +36,6 @@ class CartItemsController extends Controller
         return response()->json($item);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy( $Item_id)
     {
         Cart_items::where('id',$Item_id)->delete();
@@ -62,5 +48,10 @@ class CartItemsController extends Controller
         ->where('cart_id', $cart_id)
         ->get();
         return response()->json($items);
+    }
+    public function paidItems($cartId){
+        $items = Cart_items::where('cart_id',$cartId)->get();
+        return redirect("/product-download/{$cartId}");
+
     }
 }

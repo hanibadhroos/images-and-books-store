@@ -4,9 +4,11 @@
     <div id="app">
         <router-view/>
     </div>
+    <Footer/>
 </template>
 <script>
 import Navbar from './components/Navbar.vue';
+import Footer from './components/Footer.vue';
 import {mapActions} from 'vuex';
 import axios from '@/axios';
 export default {
@@ -17,7 +19,8 @@ export default {
         }
     },
     components:{
-        Navbar
+        Navbar,
+        Footer
     },
     name: 'App',
 
@@ -47,6 +50,9 @@ li{
 }
 a{
     text-decoration: none;
+}
+#app{
+    min-height: 60vh;
 }
 </style>
 

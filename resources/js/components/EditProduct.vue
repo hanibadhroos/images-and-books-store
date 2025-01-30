@@ -5,7 +5,7 @@
             <b>Edit Your Product</b><br>
         </div>
 
-        <label for="product">Uploade the product:  <img class="w-20" :src="'storage/'+product.file_path" alt="Product image">   </label>
+        <label for="product">Uploade the product:  <img class="w-20" width="100" height="100" :src="'storage/'+product.file_path" alt="Product image">   </label>
         <input type="file" class="form-control" id="product" name="product" @change="uploadProduct">
         <p v-if="errors.product" class="text-danger">{{errors.product}}</p>
 

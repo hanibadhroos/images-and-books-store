@@ -10,7 +10,7 @@ class Product extends Model
     use HasFactory;
 
     protected $table= 'products';
-    protected $fillable = ['title','description','category_id','user_id','type','price','file_path','watermark_path'];
+    protected $fillable = ['title','description','category_id','user_id','type','price','file_path','watermark_path','cover'];
 
     function category(){
         return $this->belongsTo(Category::class);
@@ -21,4 +21,8 @@ class Product extends Model
     function cart_items(){
         return $this->hasMany(Cart_items::class);
     }
+    function reviews(){
+        return $this->hasMany(Review::class);
+    }
+
 }

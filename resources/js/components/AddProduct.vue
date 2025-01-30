@@ -10,7 +10,7 @@
 
         <label for="description">Description:</label>
         <input type="text" id="description" name="description" class="form-control" v-model="description" >
-        <p v-if="errors.description" class="text-danger">{{errors.description}}</p>
+        <!-- <p v-if="errors.description" class="text-danger">{{errors.description}}</p> -->
 
         <label for="price">Price:</label>
         <input type="text" id="price" name="price" class="form-control" v-model="price" >
@@ -22,6 +22,7 @@
             <option value="image">Image</option>
         </select>
         <p v-if="errors.type" class="text-danger">{{errors.type}}</p>
+
         <div v-if="type === 'book'">
             <label for="cover">Select Book Cover</label>
             <input type="file" name="cover" id="cover" class="form-control" @change="uploadCover">
@@ -37,7 +38,6 @@
 
         <button type="submit" class="btn btn-success mt-2">Add</button>
 
-
     </form>
 </template>
 
@@ -49,7 +49,7 @@ export default {
         return {
             product:'',
             title:'',
-            description:'',
+            description:null,
             price:'',
             type:'',
             cover:'',
@@ -70,12 +70,12 @@ export default {
         validateInput(){
             const errors = {};
             if(!this.title)errors.title = "Title is required";
-            if(!this.description)errors.description = "Description is required";
+            // if(!this.description)errors.description = "Description is required";
             if(!this.price || isNaN(this.price))errors.price = "Price is required and must be number";
             if(!this.type)errors.type = "Type is required";
             if(!this.category_id)errors.category_id = "Category is required";
             if(!this.product)errors.product = "Product is required";
-            if(!this.cover)errors.cover = "Book Cover is required";
+            if(!this.cover && this.type==='book')errors.cover = "Book Cover is required";
 
             return errors;
         },
@@ -103,6 +103,7 @@ export default {
                 type:this.type,
                 category_id:this.category_id,
                 user_id: this.authUser.id,
+                cover: this.cover
 
             },{
                 headers:{
@@ -110,6 +111,7 @@ export default {
                 }
             }
             );
+            console.log(response.data);
             alert("Product Added successfully");
             this.$router.push('/');
         }

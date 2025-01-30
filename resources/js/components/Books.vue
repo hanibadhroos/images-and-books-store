@@ -1,14 +1,18 @@
 <template>
-     <ul class="m-2">
-        <li v-for="book in books" :key="book.id" class="ml-2 mb-2">
-            <i class="position-absolute  btn btn-success">{{book.price}} $</i>
-            <img :src="'storage/'+ book.file_path" alt="Image product">
-            <b>{{book.title}}</b>
-            <hr>
-            <div>
-                {{ book.description }}
-            </div>
-        </li>
+     <ul class="mt-2">
+            <li v-for="book in books" :key="book.id" class="ml-2 mb-2">
+               <router-link :to="{ name:'productDetails', params:{ id: book.id }}">
+
+                <i class="position-absolute  btn btn-success">{{book.price}} $</i>
+                <img :src="book.watermark_path" alt="Image product" style="width:100%; height:200px; object-fit:fill">
+                <b>{{book.title}}</b>
+                <hr>
+                <div class="col-12">
+                    <router-link :to="{ name:'productDetails', params:{ id: book.id }}" class="text-right">Read More</router-link>
+                </div>
+
+               </router-link>
+            </li>
     </ul>
 </template>
 
@@ -31,6 +35,15 @@ export default {
 
 <style scoped>
 
+    ul{
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        align-content: center;
+        justify-content: center;
+        padding: 0px;
+    }
     img{
         width: 200px;
         height: 200px;
@@ -38,10 +51,10 @@ export default {
     li{
         float: left;
         border: 3px solid;
-        height: 300px;
+        height: 290px;
         overflow: hidden;
     }
-    li div{
+    li .description{
         width: 200px;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -50,4 +63,31 @@ export default {
         overflow: hidden;
         text-overflow: ellipsis;
     }
+    b, div{
+        color: black;
+    }
+    div{
+        float: left;
+    }
+
+
+    @media  (min-width: 100px)and (max-width: 292px) {
+        li{
+            width: 200px;
+        }
+
+    }
+    @media (min-width: 501px){
+        li{
+            width: 30%;
+        }
+    }
+
+    @media (min-width: 292px)and (max-width: 500px){
+        li{
+            width: 200px;
+
+        }
+    }
+
 </style>

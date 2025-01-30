@@ -52,7 +52,7 @@ class OrderController extends Controller
             ]);
 
 
-                    // إضافة العناصر إلى جدول order_items
+        // إضافة العناصر إلى جدول order_items
         foreach ($cartItems as $item) {
             Order_details::create([
                 'order_id' => $order->id,
@@ -67,13 +67,6 @@ class OrderController extends Controller
             'order_id' => $order->id
         ]);
 
-
-        // $dataToInsert['user_id'] = $request->user_id;
-        // $dataToInsert['total_price'] = $request->total_price;
-        // $dataToInsert['status'] = $request->status;
-
-        // $order= Order::create($dataToInsert);
-        // return response()->json($order);
     }
 
     /**

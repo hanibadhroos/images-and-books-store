@@ -1,10 +1,11 @@
 <template>
-
-    <router-link class="btn btn-primary mt-2 ml-4 float-left" v-if="isLoggedIn &&authUser&& authUser.role==='seeler'" to="/add" >Add new product</router-link>
-    <router-link class="btn btn-primary mt-2 ml-4 float-left" v-if="!isLoggedIn && authUser.role==='seeler'" to="/login" >Add new product</router-link>
+    <div v-if="isLoggedIn">
+        <router-link class="btn btn-primary mt-2 ml-4 float-left" v-if="isLoggedIn &&authUser&& authUser.role==='seeler'" to="/add" >Add new product</router-link>
+        <router-link class="btn btn-primary mt-2 ml-4 float-left" v-if="!isLoggedIn && authUser.role==='seeler'" to="/login" >Add new product</router-link>
+    </div>
 
     <form class="mt-2 text-center" @submit.prevent="search">
-        <input type="search" @input="search" v-model="query" class="searchInp w-25 ml-4 p-2 mr-2" placeholder="Search for product">
+        <input type="search" @input="search" v-model="query" class="searchInp p-2" placeholder="Search for product">
         <button type="submit" class="btn btn-success">Search</button>
     </form>
 
@@ -19,10 +20,11 @@
                     <!-- Link to show the details  -->
                     <router-link :to="{ name:'productDetails', params:{ id: product.id }}">
                         <!-- Product Type -->
-                        <i class="product-type btn btn-success">{{ product.type }}</i>
+                        <i class=" btn btn-success border-dark border-5" v-if="product.type === 'image'">{{ product.type }}</i>
+                        <i class=" btn btn-primary border-5 border-dark" v-else-if="product.type === 'book'">{{ product.type }}</i>
 
                         <!-- If the product type is image -->
-                        <img :src="product.watermark_path" alt="" style="width:100%; height:200px; object-fit:fill">
+                        <img :src="product.watermark_path" alt="Product image" style="width:100%; height:200px; object-fit:fill">
                         <!--  If the  product is book  -->
 
                         <!-- <b>{{product.file_path}}</b> -->
@@ -35,7 +37,7 @@
                 </ul>
             </div>
 
-    <div class="row mt-4 ml-4" style="margin-right:auto">
+    <div class="row" style="margin-right:auto">
        <!-- Categories -->
         <!-- Filtering -->
         <select name="category" class="form-control col-md-3" v-model="selectedFilter" @change="filtering">
@@ -45,15 +47,13 @@
 
 
         <!-- New products -->
-       <div class="new-products col-md-8 ml-2 mr-2">
-
-
+       <div class="new-products col-md-8 m-2">
             <h2 class=" text-center">
                 All Products
              </h2>
 
             <ul>
-                <li v-for="product in products" :key="product.id" class="bg-dark m-2 text-white text-center">
+                <li v-for="product in productWithLikes" :key="product.id" class="bg-dark m-2 text-white text-center">
                 <router-link :to="{ name:'productDetails', params:{ id: product.id }}">
                     <div class="row">
                         <div class="col-md-10">
@@ -61,25 +61,28 @@
                             <img :src="product.watermark_path" alt="" style="width:100%; height:200px; object-fit:fill">
                         </div>
                         <div class=" col-md-2 ">
-                            <i class="text-success">{{product.price}}$</i>
-
-
+                            <i class="text-success bg-white">{{product.price}}$</i>
                         </div>
                     </div>
 
                         <hr class="bg-light mt-2 mb-2">
-                    <h2>{{product.title}}</h2>
+                    <b>{{product.title}}</b>
+                    {{ product.likes_count }}
                 </router-link>
                 <div class="text-end row" >
 
                     <!-- Do for Loop into folowers -->
                     <div class="col-md-4 text-left" >
                         <!-- Show the product seeler -->
-                        <span class="follow" v-if="authUser.id !== product.user_id">{{ authUser.name }}</span>
+                        <span class="follow" v-if="authUser.id !== product.user_id">{{product.user.name}}</span>
                         <span class="follow btn-primary"  v-else-if="authUser.id === product.user_id">You</span>
 
                      </div>
                      <div class="col-md-8 text-right">
+                            <!-- Inform about the product -->
+                            <router-link :to="{name:'inform',params:{id:product.id}}" class="mr-2 bg-dark border-0">
+                                <i class="fa-solid fa-flag text-danger fa-2x"></i>
+                            </router-link>
                             <!-- Comment Button -->
                             <router-link :to="{name:'comment',params:{id:product.id}}" class="mr-2 bg-dark border-0">
                                 <i class="fa-solid fa-message fa-2x"></i>
@@ -87,8 +90,9 @@
                             <!-- Like Button -->
                             <button style="background: none; border: none;" @click="toggleLike(product.id)">
                                 <span class="bg-gray">
-                                    <i :style="getLikeButtonStyle(product.id)" class="fa-solid fa-thumbs-up fa-2x"></i>
+                                  <i :style="getLikeButtonStyle(product.id)" class="fa-solid fa-thumbs-up fa-2x"></i>
                                 </span>
+                                 {{ product.productLikes }}
                             </button>
 
                      </div>
@@ -103,12 +107,12 @@
                 </li>
             </ul>
        </div>
-
     </div>
 </template>
 
 <script>
 import axios from '@/axios';
+import { all } from 'axios';
 import {mapState} from 'vuex';
 import {mapGetters} from 'vuex';
 export default {
@@ -121,14 +125,26 @@ export default {
             followers:[],
             addedToCart:[],
             reviews: [],  // قائمة المراجعات
-            likedProducts: [] // قائمة المنتجات التي حصلت على إعجاب من المستخدم
+            likedProducts: [], // قائمة المنتجات التي حصلت على إعجاب من المستخدم
+            allLikes:[],
         }
     },
 
     computed:{
         ...mapState(['isLoggedIn']),
         ...mapState(['authUser']),
-        ...mapGetters(['authUser'])
+        ...mapGetters(['authUser']),
+        productWithLikes(){
+            return this.products.map(product=>{
+                const productLikes = this.allLikes.reduce((count, like)=>{
+                    return like.product_id === product.id ? count + 1 : count;
+                },0);
+                return {
+                    ...product,
+                    productLikes
+                };
+            });
+        },
     },
 
 
@@ -136,25 +152,37 @@ export default {
 
         async fetchData(){
             const response = await axios.get('/product');
-            this.products = response.data;
+            this.products = response.data.products;
+            this.allLikes = response.data.likes;
+
         },
         ////// Search method
         async search(){
             //// First we get all product form database.
             const response = await axios.get('/product');
             if(this.query === ''){
-                this.products = response.data;
+                this.products = response.data.products;
             }
-            this.products = response.data;
-            this.products = this.products.filter(product => product.title.includes(this.query) || product.description.includes(this.query));
+            else{
+                this.products = response.data.products.filter(product =>
+                product.title.includes(this.query) ||
+                product.description.includes(this.query)
+                );
+
+            }
+
+            // تحديث بيانات الإعجابات أيضًا حتى يتم تحديث productWithLikes
+            this.allLikes = response.data.likes;
+
         },
         async filtering(){
             //// First we get all product form database.
             const response = await axios.get('/product');
-            this.products = response.data;
+            this.products = response.data.products;
             if(this.selectedFilter !== 'all'){
                 this.products = this.products.filter(product=>product.category.name === this.selectedFilter);
             }
+            this.allLikes = response.data.likes;
         },
         /////Delete the product
         async deleteProduct(id){
@@ -185,7 +213,7 @@ export default {
             // تحديد لون زر الإعجاب بناءً على ما إذا كان المنتج قد حصل على إعجاب من قبل المستخدم
             // return this.likedProducts.includes(productId) ? 'background-color: blue; color: white;' : 'background-color: #343a40; border:none; color: white;';
             // return this.likedProducts.includes(productId) ? 'fa-solid fa-thumbs-up fa-2' : 'background-color: #343a40; border:none; color: white;';
-            return this.likedProducts.includes(productId) ? 'color: white;' : 'color: blue;';
+            return this.likedProducts.includes(productId) ? 'color: blue;' : 'color: white;';
 
         },
         async toggleLike(productId) {
@@ -196,19 +224,29 @@ export default {
                 ///// First we need to get review
                 const review = this.reviews.find(review => review.user_id === this.authUser.id && review.product_id === productId && review.rating === 1);
                 const response = await axios.delete(`/review/${review.id}`);
+
+                this.allLikes = this.allLikes.filter(like => like.user_id !== this.authUser.id);
+
             } else {
                 // إضافة الإعجاب
-                // this.likedProducts.push(productId);
                 const response = await axios.post('/review',{
-                user_id:this.authUser.id,
-                product_id:productId,
-                rating:true,
+                    user_id:this.authUser.id,
+                    product_id:productId,
+                    rating:true,
                 });
 
-                this.setLikedProducts();
-                this.getLikeButtonStyle();
+                // إضافة الإعجاب إلى allLikes
+                this.allLikes.push({
+                    user_id: this.authUser.id,
+                    product_id: productId,
+                    rating: 1, // أو القيمة التي تستخدمها لتعريف الإعجاب
+                });
+
+
 
             }
+            this.setLikedProducts();
+            this.getLikeButtonStyle();
         },
 
      },
@@ -269,7 +307,7 @@ export default {
 
 <style scoped>
 .new-products{
-    background-color: #897979;
+    background-color: #dad5d5;
 
 }
 
@@ -337,9 +375,7 @@ li *{
 a{
     text-decoration: none;
 }
-.searchInp{
-    border-radius: 10px;
-}
+
 .follow{
     float: left;
 }
@@ -357,7 +393,10 @@ button:hover {
     .most-selling ul li{
         width: 50%;
     }
-
+    .searchInp{
+        width: 25%;
+        margin-top: 5px;
+    }
 }
 
 @media (min-width: 800px){
@@ -369,6 +408,11 @@ button:hover {
 @media (min-width: 200px)and (max-width: 500px){
     .most-selling ul li{
         width: 160px;
+    }
+    .searchInp{
+        width:140px;
+        margin: 5px auto;
+
     }
 }
 </style>

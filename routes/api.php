@@ -11,11 +11,15 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\UserController;
+use App\Jobs\SendEmailVerificationJob;
 use App\Models\User;
 use Dotenv\Exception\ValidationException;
+use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 
 
@@ -28,21 +32,21 @@ Route::middleware('auth:sanctum')->group(function(){
 
 });
 
+Route::get('/authUser',[ProductController::class,'authUser']);
+
 //Product API
 Route::apiResource('product',ProductController::class);
 Route::get('/images',[ProductController::class,'images']);
 Route::get('/books',[ProductController::class,'books']);
-Route::get('/myProducts/{user_id}',[ProductController::class,'myProducts']);
+Route::get('/myProducts/{user_id}',[ProductController::class,'myProducts'])->middleware('auth:sanctum');
 Route::get('/product/search',[ProductController::class,'search']);
+Route::get('/download/{path}',[ProductController::class,'download'])->where('path', '.*');
 
 //Category API
 Route::apiResource('category',CategoryController::class);
 
 // Users API
 Route::apiResource('users',UserController::class);
-
-//// Followers
-// Route::apiResource('followers', FollowerController::class);
 
 
 ///// Cart API
@@ -53,6 +57,7 @@ Route::get('/userCart/{user_id}',[CartController::class,'user_cart']);
 ///// cart_items API
 Route::apiResource('/cartItems',CartItemsController::class);
 Route::get('/userItems/{cart_id}',[CartItemsController::class,'userItems']);
+Route::get('/product-download/{cart_id}',[CartItemsController::class,'paidItems']);
 
 ///// Orders API
 Route::apiResource('orders',OrderController::class);
@@ -64,14 +69,18 @@ Route::apiResource('orderDetails',OrderDetailsController::class);
 
 ///// Payment API
 Route::get('paypal', [PaymentController::class, 'index'])->name('paypal');
-Route::get('paypal/payment', [PaymentController::class, 'payment'])->name('paypal.payment');
+Route::post('paypal/payment', [PaymentController::class, 'payment'])->name('paypal.payment');
 Route::get('paypal/payment/success', [PaymentController::class, 'paymentSuccess'])->name('paypal.payment.success');
 Route::get('paypal/payment/cancel', [PaymentController::class, 'paymentCancel'])->name('paypal.payment/cancel');
-
+///// Seeler Stock
+Route::get('/userStock/{seeler_id}',[PaymentController::class,'seelerStock']);
 
 ///// Review API
 Route::apiResource('review',ReviewController::class);
 Route::get('reviews/productComments/{product_id}',[ReviewController::class,'productComments']);
+Route::post('/inform/{product_id}',[ReviewController::class,'inform']);
+Route::get('/get-all-likes',[ReviewController::class,'allLikes']);
+Route::get('/informedProducts',[ReviewController::class,'informedProducts'])->name('informs');
 
 //// For Authentication
 Route::post('/sanctum/token', function (Request $request) {
@@ -91,6 +100,40 @@ Route::post('/sanctum/token', function (Request $request) {
 
 });
 
+///// Routes For Email verification
+Route::get('/email/verify/{id}/{hash}', function ($id, $hash) {
+    //  $request->fulfill();
+    //  return response()->json(['message' => 'Email verified successfully']);
+
+    $user = User::find($id);
+
+    // تحقق من وجود المستخدم
+    if (!$user) {
+        return response()->json(['message' => 'User not found'], 404);
+    }
+
+    // التحقق من صحة الرابط
+    if (!hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+        return response()->json(['message' => 'Invalid verification link'], 403);
+    }
+
+    // التحقق إذا تم التفعيل مسبقاً
+    if ($user->hasVerifiedEmail()) {
+        return response()->json(['message' => 'Email already verified, back to website']);
+    }
+
+    // تحديث حقل email_verified_at
+    $user->markEmailAsVerified();
+    return response()->json(['message'=>"Your email verified successfully"]);
+
+})->middleware([ 'signed'])->name('verification.verify');
+
+/////إرسال رابط التحقق
+Route::post('/email/verification-notification', function (Request $request) {
+    $user = $request->user();
+    SendEmailVerificationJob::dispatch($user);
+    return response()->json(['message' => 'Verification email sent']);
+})->middleware('auth:sanctum')->name('verification.send');
 
 
 Route::post('/register',[AuthController::class,'register']);

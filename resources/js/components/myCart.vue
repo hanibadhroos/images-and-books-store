@@ -3,6 +3,7 @@
         <div class="loading-spinner" v-if="loading">
             <div class="spinner"></div>
         </div>
+        <div class="table-responsive">
 
         <table class="table table-bordered">
             <thead>
@@ -16,7 +17,10 @@
             </thead>
             <tbody>
                 <tr v-for="item in cartItems" :key="item.id">
-                    <td>{{item.product.title}}</td>
+                    <td>
+                        <img :src="item.product.watermark_path" alt="product image"  style="height:100px; object-fit:fill">
+                       <i>{{item.product.title}}</i>
+                    </td>
                     <td>{{item.product.price}} $</td>
                     <td>
                         <!-- If editMode equal to true ==> Item Quantity -->
@@ -26,7 +30,7 @@
                         <input type="number" min="1" class="w-25" v-else v-model="item.quantity">
 
                         <!-- Edit Button -->
-                        <button class="btn btn-success ml-3" @click="editItem(item)">{{item.editMode?'Save':'Edit'}}</button>
+                        <button class="editBtn btn btn-success ml-3" @click="editItem(item)">{{item.editMode?'Save':'Edit'}}</button>
                     </td>
                     <td>
                         {{item.product.price * item.quantity}} $
@@ -44,24 +48,7 @@
                 </tr>
             </tfoot>
         </table>
-
-        <!-- <ul>
-            <li class="m-2 p-2" v-for="item in cartItems" :key="item.id">
-                <h3>{{item.product.title}}</h3>
-                <p>Price: {{item.product.price}}</p>
-                <p>Quantity:
-
-                 <span v-if="!item.editMode">{{item.quantity}}</span>
-
-                 <input type="number" min="1" v-else v-model="item.quantity">
-                 </p>
-                <p>Total: {{item.product.price * item.quantity}}</p>
-
-                <button class="btn btn-success" @click="editItem(item)">{{item.editMode?'Save':'Edit'}}</button>
-                <button class="btn btn-danger mr-1 ml-1" @click="deleteItem(item.id)"><i class="fa-solid fa-trash"></i></button>
-
-            </li>
-        </ul> -->
+    </div>
 
         <div class="buy-div">
             <!-- Buy Button -->
@@ -73,8 +60,6 @@
             </button>
             <b class="ml-2">{{ grandTotal }} <span class="fa-solid fa-dollar"></span></b>
         </div>
-
-
     </div>
 </template>
 
@@ -87,7 +72,8 @@ export default {
         return {
             cartItems:[],
             loading: true, // حالة التحميل
-            buyLoading:false
+            buyLoading:false,
+            cart_id:null,
         }
     },
 
@@ -104,9 +90,11 @@ export default {
         ///// Method for get all items
        async fetchCartItems(){
             try{
+
                 this.loading = true; // بدء حالة التحميل
                 const usercart = await axios.get(`/userCart/${this.authUser.id}`);
                 const cart_id = usercart.data.id;
+                this.cart_id = usercart.data.id;
                 axios.get(`/userItems/${cart_id}`).then((response)=>
                     {
                         this.cartItems= response.data.map((item)=>
@@ -116,6 +104,7 @@ export default {
                         }));
                     }
                 );
+
             }
             catch(error){
                 console.error('an error accurred while fetching items: ',error);
@@ -156,46 +145,29 @@ export default {
                     cartItems:this.cartItems,
 
                 });
-                // const order_id = response.data.order_id;
-                // if(order_id){
-                //      this.cartItems.forEach(item => {
-                //       const response = axios.post('/orderDetails',{
-                //             order_id:order_id,
-                //             product_id: item.product.id,
-                //             quantity: item.quantity,
-                //             price: item.product.price,
-                //         })
-                //         console.log(response.data);
-                //     });
-
-
-                    ///// Here we need to write function for to do Payment logic.
-                    // return this.$router.push({name:'pay',params:{order_id:order_id}});
-
-
-
-                // }
+                console.log('cartItems ===> ', this.cartItems);
+                this.buyLoading=true;
+                console.log(response.data.order_id);
+                const order_id = response.data.order_id;
+                ///// pay with paypal
+                const payResponse = await axios.post('paypal/payment',{
+                    amount: total_price, // المبلغ الإجمالي
+                    order_id: order_id, // تمرير معرف الطلب
+                    user_id:this.authUser.id,
+                    cartId: this.cart_id
+                });
+                if (payResponse.data.links) {
+                    const approveLink = payResponse.data.links.find(link => link.rel === 'approve');
+                    if (approveLink) {
+                        window.location.href = approveLink.href; // الانتقال إلى صفحة PayPal للموافقة
+                    }
+                }
 
             }
             catch(error){
                 console.error('an error accurred while create new order', error);
             }
-            try{
-                    this.buyLoading=true;
 
-                    const payResponse = await axios.get('paypal/payment');
-                    if (payResponse.data.links) {
-                        const approveLink = payResponse.data.links.find(link => link.rel === 'approve');
-                        if (approveLink) {
-                            window.location.href = approveLink.href; // الانتقال إلى صفحة PayPal للموافقة
-                        }
-                    }
-
-
-            }
-            catch(error){
-                console.error('An Error accurred while pay ', error);
-            }
         },
 
 
@@ -238,6 +210,8 @@ export default {
     background-color: rgba(255, 255, 255, 0.8);
     z-index: 9999;
 }
+
+
 
 .spinner {
     border: 8px solid #f3f3f3;

@@ -5,7 +5,8 @@
     <ul>
         <li class="ml-2" v-for="product in products" :key="product.id">
             <router-link :to="{name:'productDetails', params:{ id: product.id}}">
-                <img :src="'storage/'+product.file_path" alt="Product image">
+                <img :src="'storage/'+product.file_path" alt="Product image" v-if="product.type ==='image'">
+                <img :src="product.watermark_path" alt="Product image" v-else-if="product.type === 'book'">
                 <b>{{product.title}}</b><br>
                 <i class="text-success">{{product.price}}$</i><br>
                 <span >Sales:</span>
@@ -32,10 +33,21 @@ export default {
         ...mapGetters(['authUser'])
     },
 
+    watch:{
+        authUser: {
+            immediate: true, // استدعاء المعالج فوراً عند التحميل
+            handler(newAuthUser) {
+                if (newAuthUser && newAuthUser.id) {
+                    this.fetchData();
+                }
+            },
+        },
+    },
     async mounted(){
-        const response = await axois.get(`/myProducts/${this.authUser.id}`);
-        this.products = response.data;
-
+        // إذا كانت authUser جاهزة، قم بجلب البيانات مباشرةً
+        if (this.authUser && this.authUser.id) {
+            await this.fetchData();
+        }
     },
     methods:{
         deleteProduct(id){
@@ -46,6 +58,11 @@ export default {
             catch(erroe){
                 console.error("an erroe while delete the prodcut in my products component: ", erroe);
             }
+        },
+        async fetchData(){
+            const response = await axois.get(`/myProducts/${this.authUser.id}`);
+            console.log(response.data);
+            this.products = response.data;
         }
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SendReportNotification;
 use App\Models\Review;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -21,7 +22,7 @@ class ReviewController extends Controller
    }
 
    public function productComments($product_id){
-        $comments = Review::where('product_id',$product_id)->select('comment')->orderByDesc('created_at')->get();
+        $comments = Review::with('user')->where('product_id',$product_id)->where('comment','!=','null')->select('*')->orderByDesc('created_at')->get();
         return response()->json($comments);
    }
 
@@ -38,12 +39,34 @@ class ReviewController extends Controller
         $dataToInsert['rating'] = $request->rating;
         $review = Review::create($dataToInsert);
 
-        return response()->json($dataToInsert);
+        return response()->json($review);
    }
 
    public function destroy($id){
         $review = Review::find($id);
         $review->delete();
         return response()->json(['message'=>'Review was deleted']);
+   }
+
+   //// For inform about the product ---> البلاغ عن المنتج
+   public function inform(Request $request,$produc_id){
+        $dataToInsert['product_id']= $produc_id;
+        $dataToInsert['user_id']= $request->user_id;
+        $dataToInsert['inform']= $request->inform;
+        $inform = Review::create($dataToInsert);
+
+        SendReportNotification::dispatch($request->inform);
+
+        return response()->json($inform);
+
+   }
+   public function informedProducts(){
+    $products = Review::with('product.user')->whereNotNull('inform')->get();
+    return redirect()->away(url('/#/informed-product'));
+    // return response()->json($products);
+   }
+   public function allLikes(){
+    $likes = Review::where('rating ',1)->get();
+    return response()->json($likes);
    }
 }

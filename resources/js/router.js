@@ -9,12 +9,16 @@ import Images from './components/Images.vue';
 import Books from './components/Books.vue';
 import myProducts from './components/MyProducts.vue';
 import EditProduct from './components/EditProduct.vue';
-import MyCart from './components/MyCart.vue';
+import MyCart from './components/myCart.vue';
 import Payment from './components/Payment.vue';
 import Comment from './components/Comment.vue';
 import Categories from './components/Categories.vue';
 import EditCategory from './components/EditCategory.vue';
-
+import Inform from './components/Inform.vue';
+import EmailVerify from './components/EmailVerify.vue';
+import EmailNotice from './components/EmailNotice.vue';
+import ProductDownload from "./components/ProductDownload.vue";
+import InformedProducts from "./components/InformedProducts.vue";
 
 const routes = [
     {
@@ -113,6 +117,36 @@ const routes = [
         meta:{public:false},
         props:true
     },
+    {
+        path:'/inform/:id',
+        name:'inform',
+        component:Inform,
+        meta:{public:false},
+        props:true
+    },
+    {
+        path:'/email-notice',
+        name:'email-notice',
+        component:EmailNotice,
+        meta:{public:false},
+    },
+    {
+        path: '/verify-email/:id/:hash',
+        component: EmailVerify,
+    },
+    {
+        path:'/product-download/:id',
+        component:ProductDownload,
+        meta:{public:false},
+        name:'productDownload',
+        props:true
+    },
+    {
+        path:'/informed-product',
+        component:InformedProducts,
+        meta:{public:false},
+        name:'informedProducts',
+    }
 ]
 
 

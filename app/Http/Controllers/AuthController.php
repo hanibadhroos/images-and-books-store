@@ -3,20 +3,28 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
 
     public function register(Request $request){
+
+        $start = microtime(true);
+
         $request->validate([
             'name'=>'required|string|max:255',
             'email'=>'required|string|email|unique:users',
             'password'=>'required|string|min:6',
             'role'=>'required|string'
         ]);
+        Log::info('Validation completed in ' . (microtime(true) - $start) . ' seconds');
+
         $user= User::create([
             'id'=>Str::uuid()->toString(),
             'name'=>$request->name,
@@ -24,7 +32,17 @@ class AuthController extends Controller
             'password'=>bcrypt($request->password),
             'role'=>$request->role
         ]);
-        return response()->json($user,201);
+
+        Log::info('User creation completed in ' . (microtime(true) - $start) . ' seconds');
+
+        event(new Registered($user));
+
+        Log::info('Event dispatched in ' . (microtime(true) - $start) . ' seconds');
+
+        // إنشاء التوكين
+        $token = $user->createToken('token')->plainTextToken;
+        Log::info('Token created in ' . (microtime(true) - $start) . ' seconds');
+        return response()->json(['user'=>$user,'token'=>$token],201);
     }
 
     public function login(Request $request){

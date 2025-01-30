@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('id');
-            $table->uuid('id')->primary();
+        Schema::table('payments', function (Blueprint $table) {
+            $table->uuid('seeler_id');
+
+            $table->foreign('seeler_id')->references('id')->on('users')->onDelete('cascade')->onUpdate('cascade');
+
         });
     }
 
@@ -22,7 +24,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
+        Schema::table('payments', function (Blueprint $table) {
             //
         });
     }

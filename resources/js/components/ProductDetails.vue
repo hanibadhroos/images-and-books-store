@@ -47,15 +47,15 @@ export default {
          async addToCart(){
             try{
                 this.loading=true;
-                ////where the user doesn't has cart with status = ture.
-                if(!this.isCreated){
+                ////where the user doesn't has cart with status = true.
+                if(this.isCreated === false){
                     //// First we add new cart in  carts table
                     //// Create new cart
                     const cartResponse = await axios.post('/cart',{
                         user_id:this.authUser.id,
                         status: false
                     });
-
+                    console.log('we create new order');
                     ////////// Then we add new item to cart_items table
                     ///// First we get cart_id from carts Table for add new item in cart_items table
                     const userCart = await axios.get(`/userCart/${this.authUser.id}`);
@@ -111,9 +111,9 @@ export default {
     async mounted(){
         const product_id = parseInt(this.$route.params.id);
         try{
+            console.log(this.isCreated);
             const response = await axios.get(`product/${product_id}`);
             this.product = response.data;
-            // const cartResponse = await axios.get()
             ///// Check if the cart was created
             const cartCreated = await axios.get(`/cart/isCreated/${this.authUser.id}`)
             this.isCreated = cartCreated.data;
