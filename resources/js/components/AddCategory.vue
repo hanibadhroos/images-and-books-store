@@ -31,6 +31,7 @@ export default {
                     description:this.description
                 });
                 this.$emit('refresh-categories');
+                // this.$router.push('/');
 
             }
             catch(error){

@@ -23,7 +23,6 @@ class AuthController extends Controller
             'password'=>'required|string|min:6',
             'role'=>'required|string'
         ]);
-        Log::info('Validation completed in ' . (microtime(true) - $start) . ' seconds');
 
         $user= User::create([
             'id'=>Str::uuid()->toString(),
@@ -33,15 +32,12 @@ class AuthController extends Controller
             'role'=>$request->role
         ]);
 
-        Log::info('User creation completed in ' . (microtime(true) - $start) . ' seconds');
 
         event(new Registered($user));
 
-        Log::info('Event dispatched in ' . (microtime(true) - $start) . ' seconds');
 
         // إنشاء التوكين
         $token = $user->createToken('token')->plainTextToken;
-        Log::info('Token created in ' . (microtime(true) - $start) . ' seconds');
         return response()->json(['user'=>$user,'token'=>$token],201);
     }
 
@@ -68,7 +64,6 @@ class AuthController extends Controller
 
     public function logout(Request $request){
         $request->user()->tokens()->delete();
-
         return response()->json(['message'=>'Logged out']);
     }
 }

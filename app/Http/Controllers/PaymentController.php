@@ -8,6 +8,7 @@ use App\Models\Order_details;
 use App\Models\Payment;
 use App\Models\Product;
 use Carbon\Carbon;
+use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -138,23 +139,23 @@ class PaymentController extends Controller
 
         }
 
-    // تخزين بيانات الدفع لكل بائع
-    foreach ($seelers as $seller) {
-        Payment::create([
-            'user_id' => $request->user_id, // معرف المشتري
-            'seeler_id' => $seller['sellerId'], // معرف البائع
-            'order_id' => $orderId, // معرف الطلب
-            'transaction_id' => $transactionId, // معرف العملية
-            'method' => 'PayPal', // طريقة الدفع
-            'status' => 'success',
-            'amount' => $amount, // المبلغ الإجمالي
-            'commission' => $seller['commission'], // عمولة الموقع
-            'sellerAmount' => $seller['sellerAmount'], // المبلغ المستحق للبائع
-            'available_at' => Carbon::now()->addDays(3), // موعد الإتاحة للسحب
-        ]);
-    }
-    Order::where('id',$orderId)->where('status','hold')->update(['status'=>'compleated']);
-    Cart::where('user_id',$request->user_id)->where('status',0)->update(['status'=>1]);
+        // تخزين بيانات الدفع لكل بائع
+        foreach ($seelers as $seller) {
+            Payment::create([
+                'user_id' => $request->user_id, // معرف المشتري
+                'seeler_id' => $seller['sellerId'], // معرف البائع
+                'order_id' => $orderId, // معرف الطلب
+                'transaction_id' => $transactionId, // معرف العملية
+                'method' => 'PayPal', // طريقة الدفع
+                'status' => 'success',
+                'amount' => $amount, // المبلغ الإجمالي
+                'commission' => $seller['commission'], // عمولة الموقع
+                'sellerAmount' => $seller['sellerAmount'], // المبلغ المستحق للبائع
+                'available_at' => Carbon::now()->addDays(3), // موعد الإتاحة للسحب
+            ]);
+        }
+        Order::where('id',$orderId)->where('status','hold')->update(['status'=>'compleated']);
+        Cart::where('user_id',$request->user_id)->where('status',0)->update(['status'=>1]);
 
         ////إرسال استجابة للمستخدم
         // return response()->json([
@@ -164,37 +165,90 @@ class PaymentController extends Controller
 
         return redirect()->away(url("/#/product-download/{$cartId}"));
 
-}
+    }
 
     public function withdraw(Request $request)
     {
-        $userId = Auth::id();
+        $user = Auth::user();
+        $amount = $request->input('amount');
 
-        $payments = Payment::where('user_id', $userId)
+        // التحقق من أن الرصيد كافٍ
+        $availableStock = Payment::where('seeler_id', $user->id)
             ->where('available_at', '<=', Carbon::now())
-            ->where('withdrawn', false)
-            ->get();
+            ->sum('sellerAmount');
 
-        $totalAmount = $payments->sum('seller_amount');
-
-        if ($totalAmount > 0) {
-            // تحديث حالة السحب
-            foreach ($payments as $payment) {
-                $payment->update(['withdrawn' => true]);
-            }
-
-            return response()->json([
-                'message' => 'Withdrawal successful',
-                'total_amount' => $totalAmount,
-            ]);
+        if ($amount > $availableStock) {
+            return response()->json(['success' => false, 'message' => 'Insufficient withdrawable balance.'], 400);
         }
 
-        return response()->json(['message' => 'No funds available for withdrawal'], 400);
+        // الحصول على حساب PayPal الخاص بالبائع من جدول users
+        $paypalEmail = $user->paypal_email; // تأكد من أن هذا الحقل موجود في قاعدة البيانات
+
+        if (!$paypalEmail) {
+            return response()->json(['success' => false, 'message' => 'PayPal account not linked.'], 400);
+        }
+
+        // تهيئة PayPal
+        $provider = new PayPalClient;
+        $provider->setApiCredentials(config('paypal'));
+        $provider->getAccessToken();
+
+        // إرسال الدفعة إلى حساب البائع
+        $payoutResponse = $provider->createBatchPayout([
+            'sender_batch_header' => [
+                'sender_batch_id' => uniqid(),
+                'email_subject' => "You've received a payout!",
+            ],
+            'items' => [
+                [
+                    'recipient_type' => 'EMAIL',
+                    'receiver' => $paypalEmail,
+                    'amount' => [
+                        'value' => $amount,
+                        'currency' => 'USD'
+                    ],
+                    'note' => 'Payout from the marketplace.',
+                    'sender_item_id' => uniqid(),
+                ]
+            ]
+        ]);
+
+        // التحقق من نجاح العملية
+        if (!isset($payoutResponse['batch_header']['payout_batch_id'])) {
+            return response()->json(['success' => false, 'message' => 'Payout failed.'], 500);
+        }
+
+        // تحديث السجلات في قاعدة البيانات بعد نجاح السحب
+        Payment::where('seeler_id', $user->id)
+            ->where('available_at', '<=', Carbon::now())
+            ->update(['status' => 'withdrawn']);
+
+        return response()->json(['success' => true, 'message' => 'Payout successful!', 'payout_batch_id' => $payoutResponse['batch_header']['payout_batch_id']]);
     }
+
+
+
 
     public function seelerStock($seeler_id){
-        $stocks = Payment::where('seeler_id',$seeler_id)->select('sellerAmount')->get();
+        $stocks = Payment::where('seeler_id',$seeler_id)->sum('sellerAmount');
         return response()->json($stocks);
     }
-
+    public function availableStock($seeler_id){
+        $availableStock =Payment::where('seeler_id', $seeler_id)
+        ->where('available_at', '<=', Carbon::now())
+        ->where('status', '!=', 'withdrawn')
+        ->sum('sellerAmount');
+        return response()->json($availableStock);
+    }
+    public function mostSelling(){
+        $topSellingProducts = Order_details::with('product')
+        ->join('payments', 'order_details.order_id', '=', 'payments.order_id')
+        ->join('products', 'order_details.product_id', '=', 'products.id')
+        ->select('order_details.product_id', DB::raw('COUNT(order_details.product_id) as total_sales'))
+        ->where('payments.status', 'success') // فقط المدفوعات المكتملة
+        ->groupBy('order_details.product_id')
+        ->orderByDesc('total_sales')
+        ->get();
+        return response()->json($topSellingProducts);
+    }
 }

@@ -28,17 +28,13 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 
-Route::middleware('auth:sanctum')->group(function(){
-
-});
-
 Route::get('/authUser',[ProductController::class,'authUser']);
 
 //Product API
 Route::apiResource('product',ProductController::class);
 Route::get('/images',[ProductController::class,'images']);
 Route::get('/books',[ProductController::class,'books']);
-Route::get('/myProducts/{user_id}',[ProductController::class,'myProducts'])->middleware('auth:sanctum');
+Route::get('/myProducts/{user_id}',[ProductController::class,'myProducts'])->middleware(['auth:sanctum']);
 Route::get('/product/search',[ProductController::class,'search']);
 Route::get('/download/{path}',[ProductController::class,'download'])->where('path', '.*');
 
@@ -72,8 +68,14 @@ Route::get('paypal', [PaymentController::class, 'index'])->name('paypal');
 Route::post('paypal/payment', [PaymentController::class, 'payment'])->name('paypal.payment');
 Route::get('paypal/payment/success', [PaymentController::class, 'paymentSuccess'])->name('paypal.payment.success');
 Route::get('paypal/payment/cancel', [PaymentController::class, 'paymentCancel'])->name('paypal.payment/cancel');
+/////Wthdrow
+Route::post('/withdraw', [PaymentController::class, 'withdraw'])->middleware('auth:sanctum');
 ///// Seeler Stock
 Route::get('/userStock/{seeler_id}',[PaymentController::class,'seelerStock']);
+////Available stock
+Route::get('/available-stock/{seeler_id}',[PaymentController::class,'availableStock']);
+//////Most selling
+Route::get('/most-selling',[PaymentController::class, 'mostSelling']);
 
 ///// Review API
 Route::apiResource('review',ReviewController::class);
@@ -81,6 +83,9 @@ Route::get('reviews/productComments/{product_id}',[ReviewController::class,'prod
 Route::post('/inform/{product_id}',[ReviewController::class,'inform']);
 Route::get('/get-all-likes',[ReviewController::class,'allLikes']);
 Route::get('/informedProducts',[ReviewController::class,'informedProducts'])->name('informs');
+Route::get('/isLiked/{product_id}/{user_id}',[ReviewController::class,'Liked']);
+
+
 
 //// For Authentication
 Route::post('/sanctum/token', function (Request $request) {

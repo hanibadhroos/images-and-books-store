@@ -22,7 +22,7 @@
             <router-link to="/login" v-if="!isLoggedIn" class="btn btn-primary mr-2">Login</router-link>
             <router-link to="/register" v-if="!isLoggedIn" class="btn btn-primary">Register</router-link>
 
-            <router-link to="/profile" v-if="isLoggedIn && authUser && authUser.role === 'seeler'" class="mr-2 text-white">My account</router-link>
+            <router-link :to="{name:'profile', params:{id: authUser.id}}" v-if="isLoggedIn && authUser && authUser.role === 'seeler'" class="mr-2 text-white">My account</router-link>
             <router-link to="/myCart" v-if="isLoggedIn && authUser && authUser.role === 'user' && created" class="mr-2 text-white">
               <i class="fa-solid fa-cart-shopping"></i> My Cart
             </router-link>
@@ -54,7 +54,7 @@ export default {
 
         //// Check if the user id Buyer and he has a cart =====> True or False
         async isCreated(){
-            if(this.authUser.role === 'user'){
+            if(this.authUser && this.authUser.role === 'user'){
                     const response = await axios.get(`/cart/isCreated/${this.authUser.id}`);
                     this.created=response.data;
              }

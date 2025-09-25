@@ -7,34 +7,37 @@ use App\Models\Product;
 use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Laravel\Facades\Image;
-use Intervention\Image\ImageManager;
-use Intervention\Image\Drivers\Gd\Driver;
-use Laravel\Sanctum\PersonalAccessToken;
 
 class ProductController extends Controller
 {
-      /**
-     * Display a listing of the resource.
-     */
+
     public function index()
     {
-        $products = Product::with(['category','user'])->select('*')->orderByDesc('created_at')->get();
+        $products = Product::with(['category','user'])->orderBy('created_at', 'Desc')->get();
         $likes = Review::where('rating',1)->get();
+
         return response()->json(['products'=>$products,'likes'=>$likes]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+
     public function store(Request $request)
     {
 
+        $user = Auth::guard('sanctum')->user();
+
+        if ($user->role !== 'seeler') {
+            return response()->json(['message' => 'User not authorized','user'=>$user], 401);
+        }
+
+
+
         $validated = $request->validate([
             'title'=>'required|string',
-            'description'=>'required|string',
+            // 'description'=>'required|string',
             'price'=>'numeric|required|',
             'type'=>'required',
             'category_id'=>'required',
@@ -115,13 +118,12 @@ class ProductController extends Controller
         $product =Product::find($product_id);
         return response()->json($product);
     }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Product $product)
     {
-
+        $user = Auth::guard('sanctum')->user();
+        if($user->role !== 'seeler' && $user->id !== $product->user_id){
+            return response()->json(['unAuthorized', 'user' =>$user], 403);
+        }
         $dataToUpdate['title']= $request->title;
         $dataToUpdate['description']= $request->description;
         $dataToUpdate['price']= $request->price;
@@ -132,13 +134,9 @@ class ProductController extends Controller
 
         $product = Product::where('id',$product)->update($dataToUpdate );
         return response($product,200);
-        // return response($request,200);
 
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy($id)
     {
         $product = Product::find($id);
@@ -150,6 +148,9 @@ class ProductController extends Controller
     }
 
     public function myProducts($user_id){
+        if(Auth::guard('sanctum')->user()->role !== 'seeler'){
+            return response()->json(['unauthorized'],403);
+        }
         $products = Product::where('user_id',$user_id)->select('*')->get();
         return response()->json($products);
     }

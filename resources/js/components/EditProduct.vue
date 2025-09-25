@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div v-if="!forbidden">
         <form @submit.prevent="submitData">
         <div class="text-center">
             <b>Edit Your Product</b><br>
@@ -37,9 +37,13 @@
         <button type="submit" class="btn btn-success mt-2">Edit</button>
         </form>
     </div>
+    <div v-if="forbidden">
+        <h2 class="text-center alert alert-danger">Forbidden</h2>
+    </div>
 </template>
 
 <script>
+import { mapGetters } from 'vuex';
 export default {
     data(){
         return{
@@ -47,10 +51,12 @@ export default {
             Allcategories:{},
             prodcut_id:'',
             product:{},
-
+            forbidden:false
         }
     },
-
+    computed:{
+        ...mapGetters(['authUser'])
+    },
     async created(){
             //For Getting the categories by API.
             const CategoryResponse = await axios.get('http://127.0.0.1:8000/api/category');
@@ -62,13 +68,16 @@ export default {
             const productResponse = await axios.get(`/api/product/${this.prodcut_id}`);
             this.product = productResponse.data;
 
+            if(this.product.user_id !== this.authUser.id){
+                this.forbidden = true;
+            }
     },
 
      methods:{
         validateInput(){
             const errors = {};
             if(!this.product.title)errors.title = "Title is required";
-            if(!this.product.description)errors.description = "Description is required";
+            // if(!this.product.description)errors.description = "Description is required";
             if(!this.product.price || isNaN(this.product.price))errors.price = "Price is required and must be number";
             if(!this.product.type)errors.type = "Type is required";
             if(!this.product.category_id)errors.category_id = "Category is required";
@@ -100,7 +109,7 @@ export default {
             console.log(response.data);
             alert("Product Updated successfully");
             // console.log(response.data);
-            this.$router.push('/');
+            //this.$router.push('/');
         }
         catch(error){
             console.error("An error accurred while Adding new product: " , error.response);

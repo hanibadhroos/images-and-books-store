@@ -1,161 +1,216 @@
 <template>
-    <div class="mr-auto ml-auto mt-2 border-success p-3">
-        <img :src="product.watermark_path" alt="product Image">
-        <div class="row w-100">
-            <div class="col-md-10">
-                <h2>{{product.title}}</h2>
-            </div>
-            <div class="col-md-2">
-                <b class="text-success">{{ product.price }}$ </b>
-            </div>
-        </div>
-        <hr>
-        <div class="description">{{product.description}}</div>
-        <hr>
-            <form v-if="authUser.role === 'user'" @submit.prevent="addToCart">
-                <label for="quantity">Quantity:</label>
-                <input type="number" name="quantity" id="quantity" ref="quantity" v-model="quantity" placeholder="Enter Quantiry:" class="form-control">
-                <button type="submit" class="btn btn-success m-2" >
-                    <span v-if="!loading">Add to Cart</span>
-                    <span v-else>
-                        <div class="spinner"></div>
-                    </span>
-                </button>
-            </form>
-            <router-link :to="{name:'editProduct', params:{ id: product.id}}" class="btn btn-success m-2" v-if="authUser.role === 'saler' && product.user_id === authUser.id">Edit</router-link>
+  <div class="container py-5 animated-page">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="card shadow border-0 animated-card">
+          <!-- صورة المنتج -->
+          <img
+            :src="product.watermark_path"
+            class="card-img-top fade-in-img"
+            style="max-height: 400px; object-fit: fill"
+            alt="Product Image"
+          />
 
+          <!-- تفاصيل المنتج -->
+          <div class="card-body fade-in-content">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h3 class="card-title mb-0">{{ product.title }}</h3>
+              <span class="badge bg-success fs-5">{{ product.price }} $</span>
+            </div>
+
+            <p class="card-text text-muted" v-if="product.description">
+              {{ product.description }}
+            </p>
+
+            <hr />
+
+            <!-- إضافة إلى السلة -->
+            <div v-if="authUser.role === 'user'">
+              <form @submit.prevent="addToCart">
+                <div class="row g-3 align-items-center">
+                  <div class="col-sm-4">
+                    <label for="quantity" class="form-label">الكمية</label>
+                    <input
+                      type="number"
+                      min="1"
+                      v-model="quantity"
+                      class="form-control"
+                      id="quantity"
+                      required
+                    />
+                  </div>
+                  <div class="col-sm-8 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                      <span v-if="!loading">أضف إلى السلة</span>
+                      <span v-else class="spinner-border spinner-border-sm"></span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- زر تعديل للبائع -->
+            <div class="mt-3" v-if="authUser.role === 'saler' && product.user_id === authUser.id">
+              <router-link
+                :to="{ name: 'editProduct', params: { id: product.id } }"
+                class="btn btn-warning"
+              >
+                تعديل المنتج
+              </router-link>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 </template>
 
 <script>
-import axios from '@/axios';
-import {mapGetters} from 'vuex';
+import axios from "@/axios";
+import { mapGetters } from "vuex";
+
 export default {
-    data(){
-        return{
-            product:{},
-            isCreated:null,
-            quantity:1,
-            loading:false
+  data() {
+    return {
+      product: {},
+      isCreated: null,
+      quantity: 1,
+      loading: false,
+    };
+  },
+
+  computed: {
+    ...mapGetters(["authUser"]),
+  },
+
+  methods: {
+    async addToCart() {
+      try {
+        this.loading = true;
+        const userId = this.authUser.id;
+        // Check if the cart doesn't added
+        if (!this.isCreated) {
+          const cartResponse = await axios.post("/cart", {
+            user_id: userId,
+            status: false,
+          });
+
+
+          const userCart = await axios.get(`/userCart/${userId}`);
+          const cart_id = userCart.data.id;
+
+          const item = await axios.post("/cartItems", {
+            cart_id,
+            product_id: this.product.id,
+            status: 0,
+            quantity: this.quantity,
+          });
+            window.location.reload();
+
+          if (item.data && cartResponse.data) {
+            alert("تمت إضافة المنتج إلى السلة");
+            this.$router.push("/");
+          }
         }
-    },
-    computed:{
-         ...mapGetters(['authUser']),
+        //// If the cart doesn't added then we will just add the items
+        ///// We get the user's cart by its id.
+        else {
+          const userCart = await axios.get(`/userCart/${userId}`);
+          const cart_id = userCart.data.id;
 
-    },
-    methods:{
-         async addToCart(){
-            try{
-                this.loading=true;
-                ////where the user doesn't has cart with status = true.
-                if(this.isCreated === false){
-                    //// First we add new cart in  carts table
-                    //// Create new cart
-                    const cartResponse = await axios.post('/cart',{
-                        user_id:this.authUser.id,
-                        status: false
-                    });
-                    console.log('we create new order');
-                    ////////// Then we add new item to cart_items table
-                    ///// First we get cart_id from carts Table for add new item in cart_items table
-                    const userCart = await axios.get(`/userCart/${this.authUser.id}`);
-                    const cart_id = userCart.data.id;
+          await axios.post("/cartItems", {
+            cart_id,
+            product_id: this.product.id,
+            quantity: this.quantity,
+          });
 
-                    ///// create new item to cart_items table API.
-                    const item= await axios.post('/cartItems',{
-                        cart_id: cart_id,
-                        product_id:this.product.id,
-                        status:0,
-                        quantity: this.quantity,
-                    });
-
-
-                    if(item.data && cartResponse.data){
-                        alert('Product added to cart successfully.');
-                        this.$router.push('/');
-                    }
-                }
-                else{
-
-                    try{
-                        /// the user has a cart with status = true.
-                        /// First we get cart_id from carts Table
-                        const userCart = await axios.get(`/userCart/${this.authUser.id}`);
-                        const cart_id = userCart.data.id;
-                        //// Now we add the product to cart_items table
-                        axios.post('/cartItems',{
-                            cart_id: cart_id,
-                            product_id:this.product.id,
-                            quantity: this.quantity,
-                        });
-                        alert("Product added successfully.");
-                        this.$router.push('/');
-                    }
-                    catch(error)
-                    {
-                        console.error("An Error accurred while add new item==>", error);
-                    }
-                    finally{
-                        this.loading = false;
-                    }
-
-                }
-            }
-            catch(error){
-                console.error("Error while create new cart or item", error);
-            }
-
-
-         }
-    },
-    async mounted(){
-        const product_id = parseInt(this.$route.params.id);
-        try{
-            console.log(this.isCreated);
-            const response = await axios.get(`product/${product_id}`);
-            this.product = response.data;
-            ///// Check if the cart was created
-            const cartCreated = await axios.get(`/cart/isCreated/${this.authUser.id}`)
-            this.isCreated = cartCreated.data;
+          alert("تمت إضافة المنتج بنجاح");
+          this.$router.push("/");
         }
-        catch(error){
-            console.error("An Error accurred while show the details: ", error);
-        }
+      } catch (error) {
+        console.error("حدث خطأ أثناء إضافة المنتج إلى السلة:", error);
+      } finally {
+        this.loading = false;
+      }
+    },
+  },
 
+  async mounted() {
+    const product_id = parseInt(this.$route.params.id);
+    try {
+      const response = await axios.get(`product/${product_id}`);
+      this.product = response.data;
+
+      const cartCreated = await axios.get(`/cart/isCreated/${this.authUser.id}`);
+      this.isCreated = cartCreated.data;
+    } catch (error) {
+      console.error("فشل تحميل تفاصيل المنتج:", error);
     }
-
-}
+  },
+};
 </script>
 
 <style scoped>
-    div{
-        width: 25%;
-        background-color: #DDD;
-    }
-    div img{
-        height: 150px;
-        width: 100%;
-    }
+/* العناوين والتفاصيل */
+.card-title {
+  font-size: 1.5rem;
+}
+.card-text {
+  font-size: 1rem;
+  line-height: 1.6;
+}
+@media (max-width: 768px) {
+  .card-title {
+    font-size: 1.2rem;
+  }
+}
 
-    div .description{
-        overflow: auto;
-        width: 100%;
-    }
-    .spinner{
-        border: 8px solid #f3f3f3;
-        border-top: 8px solid #3498db;
-        border-radius: 50%;
-        width: 20px;
-        height: 20px;
-        animation: spin 1s linear infinite;
+/* أنيميشن عام للصفحة */
+.animated-page {
+  animation: fadeInUp 0.6s ease forwards;
+}
 
-    }
-    @keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-    100% {
-        transform: rotate(360deg);
-    }
+/* أنيميشن للبطاقات والمحتوى */
+.animated-card {
+  animation: zoomIn 0.7s ease forwards;
+}
+.fade-in-content {
+  animation: fadeIn 1s ease forwards;
+  opacity: 0;
+  animation-delay: 0.3s;
+}
+.fade-in-img {
+  animation: fadeIn 1s ease forwards;
+  opacity: 0;
+  animation-delay: 0.2s;
+}
+
+/* keyframes */
+@keyframes fadeInUp {
+  0% {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes zoomIn {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
 }
 </style>

@@ -9,9 +9,9 @@ use Illuminate\Auth\Access\Response;
 class ProductPolicy
 {
 
-    public function addProduct(User $user)
+    public function addProduct(User $user, Product $product = null)
     {
-        return $user->role === 'seeler';
+        return $user->role == 'seeler';
     }
 
     public function viewAny(User $user)
@@ -32,7 +32,7 @@ class ProductPolicy
      */
     public function create(User $user)
     {
-
+        return $user->role === 'seeler';
     }
 
     /**

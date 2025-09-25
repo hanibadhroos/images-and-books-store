@@ -43,7 +43,7 @@ export default createStore({
         },
         navigateToLogin()
         {
-            router.push({name:'Login'});
+            router.push('/login');
         }
     },
     getters:{

@@ -46,10 +46,11 @@ const routes = [
         meta:{public:false}
     },
     {
-        path:'/profile',
+        path:'/profile/:id',
         name:'profile',
         component:UserProfile,
-        meta:{public:false}
+        meta:{public:false},
+        props:true
     },
     {
         path:'/product/details/:id',

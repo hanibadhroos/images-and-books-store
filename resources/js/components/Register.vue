@@ -10,7 +10,7 @@
                 <option value="seeler">Seeler</option>
             </select>
             <button type="submit" class="btn btn-primary mt-2" v-if="!isLoading">Register</button>
-            <button type="submit" class="btn btn-primary mt-2" v-else><div class="spinner"></div></button>
+            <button  class="btn btn-primary mt-2" v-else><div class="spinner"></div></button>
             <router-link to="/Login" class="mr-2"> I have already account? <b>Login</b></router-link>
         </form>
     </div>

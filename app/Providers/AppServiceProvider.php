@@ -24,12 +24,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Gate::define('addproduct', function(User $user){
-            return strtolower($user->role) === 'seeler';
-        });
 
-
-        Gate::policy(Product::class, ProductPolicy::class);
-
+        // Gate::define('addproduct', function($user) {
+        //     return strtolower($user->role) === 'seeler'; // تأكد من أن هذه السطر مكتوب بشكل صحيح
+        // });
     }
 }

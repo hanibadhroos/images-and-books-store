@@ -21,6 +21,16 @@ class ReviewController extends Controller
     return response()->json($review);
    }
 
+   public function Liked($produc_id, $user_id){
+    $isLiked = Review::where('product_id',$produc_id)->where('user_id',$user_id)->where('rating',1)->first();
+    if($isLiked){
+        return response()->json(['isLiked'=>true]);
+    }
+    else{
+        return response()->json(['isLiked'=>false]);
+    }
+   }
+
    public function productComments($product_id){
         $comments = Review::with('user')->where('product_id',$product_id)->where('comment','!=','null')->select('*')->orderByDesc('created_at')->get();
         return response()->json($comments);

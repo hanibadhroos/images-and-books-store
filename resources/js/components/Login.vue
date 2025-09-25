@@ -46,7 +46,7 @@ export default {
                 });
                 if(response.data.token){
                     localStorage.setItem('token', response.data.token);
-                    this.$store.commit('LOGIN',response.data.user);
+                    this.$store.commit('LOGIN',response.data.user); 
                     this.$router.push('/');
                 }
                 else{

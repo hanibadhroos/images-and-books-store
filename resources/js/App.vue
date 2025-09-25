@@ -37,6 +37,7 @@ export default {
             this.fetchAuthUser(response.data);
         }).catch(error=>{
             console.error('Error fetching user ', error);
+            this.$router.push('/Login');
         })
 
     }

@@ -31,8 +31,11 @@
 
 
          <label for="category">Category:</label>
-        <select name="category" id="category" class="form-control" v-model="category_id">
-            <option v-for="category in Allcategories" :key="category.id" v-bind:value="category.id">{{category.name}}</option>
+        <select name="category" id="category" class="form-control" v-model="category_id" size="5">
+            <option v-for="category in Allcategories" :key="category.id" v-bind:value="category.id">
+                {{category.name}}
+                <i>{{category.description}}</i>
+            </option>
         </select>
         <p v-if="errors.category" class="text-danger">{{errors.category}}</p>
 
@@ -111,7 +114,6 @@ export default {
                 }
             }
             );
-            console.log(response.data);
             alert("Product Added successfully");
             this.$router.push('/');
         }

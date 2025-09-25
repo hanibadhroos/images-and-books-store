@@ -28,8 +28,6 @@ class DatabaseSeeder extends Seeder
             'password'=>bcrypt('picbook4422'),
             'role'=>'admin'
         ]);
-        // $this->call([
-        //     adminFactory::class
-        // ]);
+
     }
 }
