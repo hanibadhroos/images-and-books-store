@@ -14,7 +14,11 @@ Admin can manage all users and products.
 - Seller Dashboard
 - REST API, and Payment Integration
 - Withdraw money of store to PayPal seller account.
-<img width="1845" height="979" alt="Products page" src="https://github.com/user-attachments/assets/9d6ab56a-e883-4c69-bb59-14d5dd9aa48c" />
+<img alt="Products page" src="https://github.com/user-attachments/assets/9d6ab56a-e883-4c69-bb59-14d5dd9aa48c" />
+<img  alt="Screenshot (158)" src="https://github.com/user-attachments/assets/af7f830a-7634-40a4-bee9-7e8cd7b50ff4" />
+<img  alt="Screenshot (162)" src="https://github.com/user-attachments/assets/3f3f7003-00e5-4208-b50f-5c2a6d17ced8" />
+<img  alt="Screenshot (159)" src="https://github.com/user-attachments/assets/58205a7c-e4ae-41a6-a201-531f96bc2e4e" />
+<img alt="Screenshot (157)" src="https://github.com/user-attachments/assets/d4007242-0cd0-4691-9ecc-36036e445988" />
 
 ---
 
