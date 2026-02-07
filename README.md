@@ -19,13 +19,21 @@ Admin can manage all users and products.
 
 <div>
 <img width="1845" height="879" alt="products page" src="https://github.com/user-attachments/assets/4025f72b-e520-4c36-8065-5797cdc395e9" />
+<hr>
 <img width="1828" height="861" alt="seller dashboard" src="https://github.com/user-attachments/assets/19041998-1e4d-40d8-93f4-f0406790e8e1" />
+<hr>
 <img width="1813" height="850" alt="product details for seller" src="https://github.com/user-attachments/assets/47fa78ee-c2d8-48cd-a811-3068fc05b3b9" />
+<hr>
 <img width="1838" height="864" alt="images page" src="https://github.com/user-attachments/assets/2595677a-dba0-4941-b4cb-064774d81963" />
+<hr>
 <img width="1823" height="854" alt="comments page" src="https://github.com/user-attachments/assets/d74345fe-d982-437a-9bab-b3562c030085" />
+<hr>
 <img width="1828" height="863" alt="cart page" src="https://github.com/user-attachments/assets/10fb31ac-a483-45ed-9c70-27f884962547" />
+<hr>
 <img width="1909" height="970" alt="payment page" src="https://github.com/user-attachments/assets/5fef5f1f-81b9-44b9-af3b-0b6c2fc9bede" />
+<hr>
 <img width="1823" height="849" alt="product details for buyer" src="https://github.com/user-attachments/assets/6406f866-24d5-4272-bc3c-2da313017ea1" />
+<hr>
 
 </div>
 ---
