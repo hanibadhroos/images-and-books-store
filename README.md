@@ -16,7 +16,8 @@ Admin can manage all users and products.
 - Withdraw money of store to PayPal seller account.
 - Adding watermark on all products for copy rights.
 
-
+---
+## User interface
 <div>
 <img width="1845" height="879" alt="products page" src="https://github.com/user-attachments/assets/4025f72b-e520-4c36-8065-5797cdc395e9" />
 <hr>
